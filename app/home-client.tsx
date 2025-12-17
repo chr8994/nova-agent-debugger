@@ -210,12 +210,14 @@ export default function HomeClient() {
               }}
             />
           ) : (
-            <div className="h-8 w-8 rounded bg-indigo-600 flex items-center justify-center">
-              <Bug className="h-5 w-5 text-white" />
-            </div>
+            <img
+              src="https://newhomeconnect.com/logo/light.png"
+              alt="Nova Agent Debugger"
+              className="h-8 w-auto"
+            />
           )}
           <div>
-            <h1 className="text-xl font-semibold text-gray-900 dark:text-white">
+            <h1 className="text-lg font-bold text-gray-900 dark:text-white">
               {agentName}
             </h1>
             {serviceUrl && (

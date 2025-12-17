@@ -166,7 +166,7 @@ export function ConfigPanel({
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-6 border-b dark:border-gray-700">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-              Agent Debugger
+              Config Panel
             </h2>
             <div className="flex items-center gap-2">
               <span className={`flex items-center gap-1.5 text-sm ${getStatusColor()}`}>
@@ -183,7 +183,7 @@ export function ConfigPanel({
           <div className="flex-1 overflow-y-auto p-4 space-y-6">
             {/* Connection Section */}
             <div className="space-y-4">
-              <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+              <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
                 Connection
               </h3>
 
@@ -233,7 +233,8 @@ export function ConfigPanel({
               <button
                 onClick={onDiscover}
                 disabled={isDiscovering || !serviceUrl}
-                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium text-white rounded-lg hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                style={{ backgroundColor: '#212935' }}
               >
                 {isDiscovering ? (
                   <>
@@ -279,11 +280,11 @@ export function ConfigPanel({
                       <img
                         src={agentInfo.avatar_url || agentInfo.logo_url}
                         alt={agentInfo.name}
-                        className="h-10 w-10 rounded-lg object-cover border dark:border-gray-600 bg-white"
+                        className="h-8 w-8 rounded-lg object-cover border dark:border-gray-600 bg-white"
                       />
                     ) : (
                       <div
-                        className="h-10 w-10 rounded-lg flex items-center justify-center border dark:border-gray-600"
+                        className="h-8 w-8 rounded-lg flex items-center justify-center border dark:border-gray-600"
                         style={{
                           backgroundColor: agentInfo.theme_color
                             ? `${agentInfo.theme_color}1a`
@@ -328,7 +329,7 @@ export function ConfigPanel({
                       {agentInfo.capabilities.slice(0, 5).map((cap) => (
                         <span
                           key={cap}
-                          className="px-2 py-0.5 text-xs bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-full"
+                          className="px-2 py-0.5 text-xs bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded-full"
                         >
                           {cap}
                         </span>
@@ -354,15 +355,15 @@ export function ConfigPanel({
 
             {/* Help Text */}
             {!agentInfo && (
-              <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                <p className="text-sm text-blue-700 dark:text-blue-300">
+              <div className="p-4 bg-gray-50 dark:bg-gray-900/20 rounded-lg border border-gray-200 dark:border-gray-800">
+                <p className="text-sm text-gray-700 dark:text-gray-300">
                   Enter the base URL of your nova-agent-core service and click
                   "Discover Agent" to fetch its configuration.
                 </p>
-                <p className="text-xs text-blue-600 dark:text-blue-400 mt-2">
+                <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
                   The debugger will try to fetch from:
                 </p>
-                <ul className="text-xs text-blue-600 dark:text-blue-400 mt-1 list-disc list-inside">
+                <ul className="text-xs text-gray-600 dark:text-gray-400 mt-1 list-disc list-inside">
                   <li>/.well-known/agent-config</li>
                   <li>/api/agent-config</li>
                 </ul>
