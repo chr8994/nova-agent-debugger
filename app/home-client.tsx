@@ -200,22 +200,12 @@ export default function HomeClient() {
         style={{ right: isPanelOpen ? `${panelWidth}px` : '0' }}
       >
         <div className="flex items-center gap-3">
-          {agentInfo ? (
-            <img
-              src={logoUrl}
-              alt={agentName}
-              className="h-8 w-8 rounded"
-              onError={() => {
-                if (!logoError) setLogoError(true);
-              }}
-            />
-          ) : (
+
             <img
               src="https://lsbhexqvhkemgkqfbwdj.supabase.co/storage/v1/object/public/logos/light_logo.png"
               alt="Nova Agent Debugger"
               className="h-8 w-auto"
             />
-          )}
           <div>
             <h1 className="text-lg font-bold text-gray-900 dark:text-white">
               {agentName}

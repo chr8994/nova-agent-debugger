@@ -211,10 +211,10 @@
     "@emnapi/runtime" "^1.4.3"
     "@tybys/wasm-util" "^0.10.0"
 
-"@newhomestar/chat-ui@^0.0.16":
-  version "0.0.16"
-  resolved "https://registry.npmjs.org/@newhomestar/chat-ui/-/chat-ui-0.0.16.tgz#0b699b3e357d903ba67c4aede95045a991b97e62"
-  integrity sha512-Mrjig36hWPtBn2GPtkkEPQoBFui0KhY4zf4cD2CjNiCxmXPACqjQZ53D2jynZkI/rGtC/Lke06b+TKaOPXyqew==
+"@newhomestar/chat-ui@^0.0.17":
+  version "0.0.17"
+  resolved "https://registry.npmjs.org/@newhomestar/chat-ui/-/chat-ui-0.0.17.tgz#bb72772691c834b7f33dc7d0a1280de3cd59625c"
+  integrity sha512-L2VCtyHb6GiocYUVz6cWul79UKZ+/cvOFNj7uJkWEfKYLpubfQVM+qS4XR1AkOpsj+fpsDvYkJhQd6CqcOF5/A==
   dependencies:
     "@newhomestar/chat-ui" "^0.0.4"
     "@radix-ui/react-accordion" "^1.1.2"
