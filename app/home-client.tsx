@@ -11,7 +11,10 @@ const STORAGE = {
   SERVICE_URL: 'nova-debugger-service-url',
   AUTH_TOKEN: 'nova-debugger-auth-token',
   PANEL_OPEN: 'nova-debugger-panel-open',
+  PANEL_WIDTH: 'nova-debugger-panel-width',
 } as const;
+
+const DEFAULT_PANEL_WIDTH = 320;
 
 // Default fallback for logo
 const DEFAULT_LOGO_SVG =
@@ -40,13 +43,16 @@ export default function HomeClient() {
 
   // Config panel state
   const [isPanelOpen, setIsPanelOpen] = useState(true);
+  const [panelWidth, setPanelWidth] = useState(DEFAULT_PANEL_WIDTH);
   const [serviceUrl, setServiceUrl] = useState('');
   const [authToken, setAuthToken] = useState('');
   const [agentInfo, setAgentInfo] = useState<AgentConfig | null>(null);
   const [status, setStatus] = useState<AgentStatus>('disconnected');
   const [discoveryError, setDiscoveryError] = useState<string | null>(null);
   const [isDiscovering, setIsDiscovering] = useState(false);
-  const [chatId, setChatId] = useState('');
+  const [chatId, setChatId] = useState(() => 
+    `debug-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+  );
 
   // Load saved config on mount
   useEffect(() => {
@@ -58,14 +64,18 @@ export default function HomeClient() {
     const savedUrl = getStorageItem(STORAGE.SERVICE_URL, '');
     const savedToken = getStorageItem(STORAGE.AUTH_TOKEN, '');
     const savedPanelOpen = getStorageItem(STORAGE.PANEL_OPEN, 'true');
+    const savedPanelWidth = getStorageItem(STORAGE.PANEL_WIDTH, '');
 
     // Use localStorage values if they exist, otherwise use environment variables
     setServiceUrl(savedUrl || envApiUrl);
     setAuthToken(savedToken || envAuthToken);
     setIsPanelOpen(savedPanelOpen !== 'false');
-
-    // Generate a unique chat ID for this session
-    setChatId(`debug-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`);
+    if (savedPanelWidth) {
+      const width = parseInt(savedPanelWidth, 10);
+      if (width >= 280 && width <= 600) {
+        setPanelWidth(width);
+      }
+    }
   }, []);
 
   // Save config when it changes
@@ -80,6 +90,12 @@ export default function HomeClient() {
   useEffect(() => {
     setStorageItem(STORAGE.PANEL_OPEN, isPanelOpen.toString());
   }, [isPanelOpen]);
+
+  // Save panel width when it changes
+  const handlePanelWidthChange = useCallback((width: number) => {
+    setPanelWidth(width);
+    setStorageItem(STORAGE.PANEL_WIDTH, width.toString());
+  }, []);
 
   // Configure the chat stream hook with dynamic config
   const {
@@ -175,9 +191,12 @@ export default function HomeClient() {
   const agentName = agentInfo?.name || 'Nova Agent Debugger';
 
   return (
-    <main className={`min-h-screen flex flex-col ${isDark ? 'dark' : ''}`}>
+    <main className={`h-screen flex flex-col overflow-hidden ${isDark ? 'dark' : ''}`}>
       {/* Header */}
-      <header className="sticky top-0 z-50 flex items-center justify-between px-6 py-4 border-b bg-white dark:bg-gray-900 dark:border-gray-700">
+      <header 
+        className="fixed top-0 left-0 z-50 flex items-center justify-between px-6 py-4 border-b bg-white dark:bg-gray-900 dark:border-gray-700 transition-all duration-300"
+        style={{ right: isPanelOpen ? `${panelWidth}px` : '0' }}
+      >
         <div className="flex items-center gap-3">
           {agentInfo ? (
             <img
@@ -237,9 +256,11 @@ export default function HomeClient() {
         </div>
       </header>
 
-      {/* Error Banner */}
-      {chatError && (
-        <div className="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 p-4 mx-6 mt-4 rounded">
+      {/* Content wrapper with padding for fixed header */}
+      <div className="pt-[73px] flex-1 flex flex-col min-h-0">
+        {/* Error Banner */}
+        {chatError && (
+          <div className="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 p-4 mx-6 mt-4 rounded">
           <p className="text-red-700 dark:text-red-300">{chatError}</p>
           <button
             onClick={() => setChatError(null)}
@@ -254,9 +275,8 @@ export default function HomeClient() {
       <div className="flex-1 flex min-h-0">
         {/* Chat Container */}
         <div
-          className={`flex-1 flex flex-col min-h-0 transition-all duration-300 ${
-            isPanelOpen ? 'mr-[320px]' : ''
-          }`}
+          className="flex-1 flex flex-col min-h-0 transition-all duration-300"
+          style={{ marginRight: isPanelOpen ? `${panelWidth}px` : '0' }}
         >
           {status === 'connected' ? (
             <ChatContainer
@@ -310,7 +330,10 @@ export default function HomeClient() {
           onAuthTokenChange={setAuthToken}
           onDiscover={handleDiscover}
           onClearConfig={handleClearConfig}
+          panelWidth={panelWidth}
+          onPanelWidthChange={handlePanelWidthChange}
         />
+      </div>
       </div>
     </main>
   );

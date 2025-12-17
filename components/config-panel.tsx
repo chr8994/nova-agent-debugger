@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   PanelRightClose,
   PanelRightOpen,
@@ -13,6 +13,7 @@ import {
   Wrench,
   RefreshCw,
   X,
+  GripVertical,
 } from 'lucide-react';
 import type { AgentConfig, AgentStatus, STORAGE_KEYS } from '@/types/agent';
 
@@ -20,7 +21,12 @@ const STORAGE = {
   SERVICE_URL: 'nova-debugger-service-url',
   AUTH_TOKEN: 'nova-debugger-auth-token',
   PANEL_OPEN: 'nova-debugger-panel-open',
+  PANEL_WIDTH: 'nova-debugger-panel-width',
 } as const;
+
+const MIN_PANEL_WIDTH = 280;
+const MAX_PANEL_WIDTH = 600;
+const DEFAULT_PANEL_WIDTH = 320;
 
 interface ConfigPanelProps {
   isOpen: boolean;
@@ -35,6 +41,8 @@ interface ConfigPanelProps {
   onAuthTokenChange: (token: string) => void;
   onDiscover: () => void;
   onClearConfig: () => void;
+  panelWidth: number;
+  onPanelWidthChange: (width: number) => void;
 }
 
 export function ConfigPanel({
@@ -50,7 +58,46 @@ export function ConfigPanel({
   onAuthTokenChange,
   onDiscover,
   onClearConfig,
+  panelWidth,
+  onPanelWidthChange,
 }: ConfigPanelProps) {
+  const [isResizing, setIsResizing] = useState(false);
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  // Handle resize
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsResizing(true);
+  }, []);
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isResizing) return;
+      
+      const newWidth = window.innerWidth - e.clientX;
+      const clampedWidth = Math.min(MAX_PANEL_WIDTH, Math.max(MIN_PANEL_WIDTH, newWidth));
+      onPanelWidthChange(clampedWidth);
+    };
+
+    const handleMouseUp = () => {
+      setIsResizing(false);
+    };
+
+    if (isResizing) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      document.body.style.cursor = 'col-resize';
+      document.body.style.userSelect = 'none';
+    }
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    };
+  }, [isResizing, onPanelWidthChange]);
+
   const getStatusColor = () => {
     switch (status) {
       case 'connected':
@@ -82,9 +129,10 @@ export function ConfigPanel({
       {/* Toggle Button - Always visible */}
       <button
         onClick={onToggle}
-        className={`fixed top-4 right-4 z-50 p-2 rounded-lg border bg-white dark:bg-gray-800 dark:border-gray-700 shadow-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-all ${
-          isOpen ? 'right-[340px]' : 'right-4'
-        }`}
+        className={`fixed top-4 z-50 p-2 rounded-lg border bg-white dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all`}
+        style={{
+          right: isOpen ? `${panelWidth + 20}px` : '16px',
+        }}
         aria-label={isOpen ? 'Close config panel' : 'Open config panel'}
       >
         {isOpen ? (
@@ -96,13 +144,27 @@ export function ConfigPanel({
 
       {/* Panel */}
       <div
-        className={`fixed top-0 right-0 h-full w-[320px] bg-white dark:bg-gray-900 border-l dark:border-gray-700 shadow-xl transform transition-transform duration-300 ease-in-out z-40 ${
+        ref={panelRef}
+        className={`fixed top-0 right-0 h-full bg-white dark:bg-gray-900 border-l dark:border-gray-700 transform transition-transform duration-300 ease-in-out z-40 ${
           isOpen ? 'translate-x-0' : 'translate-x-full'
         }`}
+        style={{ width: `${panelWidth}px` }}
       >
+        {/* Resize Handle */}
+        <div
+          onMouseDown={handleMouseDown}
+          className={`absolute left-0 top-0 w-1 h-full cursor-col-resize hover:bg-indigo-500/50 transition-colors group ${
+            isResizing ? 'bg-indigo-500/50' : 'bg-transparent'
+          }`}
+        >
+          <div className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 p-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">
+            <GripVertical className="h-4 w-4 text-gray-400" />
+          </div>
+        </div>
+
         <div className="h-full flex flex-col overflow-hidden">
           {/* Header */}
-          <div className="flex items-center justify-between px-4 py-4 border-b dark:border-gray-700">
+          <div className="flex items-center justify-between px-4 py-6 border-b dark:border-gray-700">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
               Agent Debugger
             </h2>
