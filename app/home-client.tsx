@@ -103,6 +103,8 @@ export default function HomeClient() {
     isLoading,
     isStreaming,
     sendMessage,
+    userName,
+    userAvatar,
   } = useChatStream({
     apiUrl: serviceUrl || 'http://localhost:3000',
     agentId: agentInfo?.agent_id || agentInfo?.name || 'nova-agent-core',
@@ -283,7 +285,8 @@ export default function HomeClient() {
               messages={messages as any}
               isLoading={isLoading}
               isStreaming={isStreaming}
-              userName="Debug User"
+              userName={userName}
+              userAvatar={userAvatar}
               agentName={agentName}
               agentLogoUrl={agentInfo?.logo_url || agentInfo?.avatar_url}
               onSendMessage={handleSendMessage}
