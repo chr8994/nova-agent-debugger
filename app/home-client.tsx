@@ -211,7 +211,7 @@ export default function HomeClient() {
             />
           ) : (
             <img
-              src="https://newhomeconnect.com/logo/light.png"
+              src="https://lsbhexqvhkemgkqfbwdj.supabase.co/storage/v1/object/public/logos/light_logo.png"
               alt="Nova Agent Debugger"
               className="h-8 w-auto"
             />
@@ -298,7 +298,7 @@ export default function HomeClient() {
           ) : (
             <div className="h-full flex items-center justify-center">
               <div className="text-center max-w-md px-6">
-                <div className="h-16 w-16 rounded-2xl bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center mx-auto mb-4">
+                <div className="h-16 w-16 rounded-2xl bg-gray-100 dark:bg-gray-700/30 flex items-center justify-center mx-auto mb-4">
                   <Bug className="h-8 w-8 text-indigo-600 dark:text-indigo-400" />
                 </div>
                 <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
