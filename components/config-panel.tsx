@@ -12,6 +12,7 @@ import {
   Terminal,
   Wrench,
   RefreshCw,
+  RotateCcw,
   X,
   GripVertical,
 } from 'lucide-react';
@@ -41,6 +42,7 @@ interface ConfigPanelProps {
   onAuthTokenChange: (token: string) => void;
   onDiscover: () => void;
   onClearConfig: () => void;
+  onResetChat: () => void;
   panelWidth: number;
   onPanelWidthChange: (width: number) => void;
 }
@@ -58,6 +60,7 @@ export function ConfigPanel({
   onAuthTokenChange,
   onDiscover,
   onClearConfig,
+  onResetChat,
   panelWidth,
   onPanelWidthChange,
 }: ConfigPanelProps) {
@@ -248,6 +251,17 @@ export function ConfigPanel({
                   </>
                 )}
               </button>
+
+              {/* Reset Chat Button - Only shown when connected */}
+              {status === 'connected' && (
+                <button
+                  onClick={onResetChat}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-200 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                >
+                  <RotateCcw className="h-4 w-4" />
+                  Reset Chat
+                </button>
+              )}
 
               {/* Error Display */}
               {error && (
