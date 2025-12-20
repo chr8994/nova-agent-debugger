@@ -15,6 +15,8 @@ import {
   RotateCcw,
   X,
   GripVertical,
+  Sun,
+  Moon,
 } from 'lucide-react';
 import type { AgentConfig, AgentStatus, STORAGE_KEYS } from '@/types/agent';
 
@@ -45,6 +47,8 @@ interface ConfigPanelProps {
   onResetChat: () => void;
   panelWidth: number;
   onPanelWidthChange: (width: number) => void;
+  isDark: boolean;
+  onToggleDarkMode: () => void;
 }
 
 export function ConfigPanel({
@@ -63,6 +67,8 @@ export function ConfigPanel({
   onResetChat,
   panelWidth,
   onPanelWidthChange,
+  isDark,
+  onToggleDarkMode,
 }: ConfigPanelProps) {
   const [isResizing, setIsResizing] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -129,21 +135,39 @@ export function ConfigPanel({
 
   return (
     <>
-      {/* Toggle Button - Always visible */}
-      <button
-        onClick={onToggle}
-        className={`fixed top-4 z-50 p-2 rounded-lg border bg-white dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all`}
+      {/* Toggle Buttons - Always visible */}
+      <div
+        className="fixed top-4 z-50 flex items-center gap-2 transition-[right] duration-300 ease-in-out"
         style={{
           right: isOpen ? `${panelWidth + 20}px` : '16px',
         }}
-        aria-label={isOpen ? 'Close config panel' : 'Open config panel'}
       >
-        {isOpen ? (
-          <PanelRightClose className="h-5 w-5 text-gray-600 dark:text-gray-300" />
-        ) : (
-          <PanelRightOpen className="h-5 w-5 text-gray-600 dark:text-gray-300" />
-        )}
-      </button>
+        {/* Dark Mode Toggle */}
+        <button
+          onClick={onToggleDarkMode}
+          className="p-2 rounded-lg border bg-white dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+          aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+        >
+          {isDark ? (
+            <Sun className="h-5 w-5 text-gray-300" />
+          ) : (
+            <Moon className="h-5 w-5 text-gray-600" />
+          )}
+        </button>
+
+        {/* Panel Toggle */}
+        <button
+          onClick={onToggle}
+          className="p-2 rounded-lg border bg-white dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+          aria-label={isOpen ? 'Close config panel' : 'Open config panel'}
+        >
+          {isOpen ? (
+            <PanelRightClose className="h-5 w-5 text-gray-600 dark:text-gray-300" />
+          ) : (
+            <PanelRightOpen className="h-5 w-5 text-gray-600 dark:text-gray-300" />
+          )}
+        </button>
+      </div>
 
       {/* Panel */}
       <div
@@ -167,8 +191,8 @@ export function ConfigPanel({
 
         <div className="h-full flex flex-col overflow-hidden">
           {/* Header */}
-          <div className="flex items-center justify-between px-4 py-6 border-b dark:border-gray-700">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+          <div className="flex items-center justify-between px-4 py-6 h-[70px] border-b dark:border-gray-700">
+            <h2 className="text-md font-semibold text-gray-900 dark:text-white">
               Config Panel
             </h2>
             <div className="flex items-center gap-2">
@@ -183,10 +207,10 @@ export function ConfigPanel({
           </div>
 
           {/* Content */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-6">
+          <div className="flex-1 overflow-y-auto p-6 space-y-6">
             {/* Connection Section */}
             <div className="space-y-4">
-              <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+              <h3 className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
                 Connection
               </h3>
 
@@ -236,8 +260,7 @@ export function ConfigPanel({
               <button
                 onClick={onDiscover}
                 disabled={isDiscovering || !serviceUrl}
-                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium text-white rounded-lg hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                style={{ backgroundColor: '#212935' }}
+                className="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold text-white rounded-lg hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors bg-gray-600 hover:bg-gray-700"
               >
                 {isDiscovering ? (
                   <>
@@ -276,7 +299,7 @@ export function ConfigPanel({
             {agentInfo && (
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                  <h3 className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
                     Agent Info
                   </h3>
                   <button
@@ -288,7 +311,7 @@ export function ConfigPanel({
                 </div>
 
                 {/* Agent Card */}
-                <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border dark:border-gray-700 space-y-3">
+                <div className="p-4 bg-white dark:bg-gray-800 rounded-lg border dark:border-gray-700 space-y-3">
                   <div className="flex items-center gap-3">
                     {agentInfo.avatar_url || agentInfo.logo_url ? (
                       <img
@@ -298,7 +321,7 @@ export function ConfigPanel({
                       />
                     ) : (
                       <div
-                        className="h-8 w-8 rounded-lg flex items-center justify-center border dark:border-gray-600"
+                        className="h-8 w-8 rounded-2xl flex items-center justify-center border border-gray-100 dark:border-gray-600"
                         style={{
                           backgroundColor: agentInfo.theme_color
                             ? `${agentInfo.theme_color}1a`
@@ -377,7 +400,7 @@ export function ConfigPanel({
                 <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
                   The debugger will try to fetch from:
                 </p>
-                <ul className="text-xs text-gray-600 dark:text-gray-400 mt-1 list-disc list-inside">
+                <ul className="text-sm text-gray-600 dark:text-gray-400 mt-2 list-disc list-inside">
                   <li>/.well-known/agent-config</li>
                   <li>/api/agent-config</li>
                 </ul>

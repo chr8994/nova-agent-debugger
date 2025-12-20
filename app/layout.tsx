@@ -11,8 +11,8 @@ const Providers = dynamic(
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata = {
-  title: 'Chat UI Example',
-  description: 'Example Next.js app using @newhomestar/chat-ui',
+  title: 'Agent Debugger',
+  description: 'Agent debugger project',
 }
 
 export default function RootLayout({

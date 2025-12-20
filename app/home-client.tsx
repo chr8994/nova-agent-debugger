@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { ChatContainer, useChatStream, type ChatMessage } from '@newhomestar/chat-ui';
-import { Sun, Moon, Bug } from 'lucide-react';
+import { Sun, Moon } from 'lucide-react';
 import { ConfigPanel } from '@/components/config-panel';
 import type { AgentConfig, AgentStatus } from '@/types/agent';
 
@@ -185,6 +185,50 @@ export default function HomeClient() {
     [sendMessage]
   );
 
+  // Handle retry message - resend the last user message
+  const handleRetryMessage = useCallback(
+    (messageId: string) => {
+      // Find the last user message before this assistant message
+      const messageIndex = messages.findIndex((m: any) => m.id === messageId);
+      if (messageIndex > 0) {
+        const previousUserMessage = messages
+          .slice(0, messageIndex)
+          .reverse()
+          .find((m: any) => m.role === 'user');
+        if (previousUserMessage) {
+          setChatError(null);
+          sendMessage(previousUserMessage.content);
+        }
+      }
+    },
+    [messages, sendMessage]
+  );
+
+  // Handle like message - console log for debugging
+  const handleLikeMessage = useCallback((messageId: string) => {
+    console.log('👍 Liked message:', messageId);
+  }, []);
+
+  // Handle dislike message - console log for debugging
+  const handleDislikeMessage = useCallback((messageId: string) => {
+    console.log('👎 Disliked message:', messageId);
+  }, []);
+
+  // Handle share message - copy to clipboard
+  const handleShareMessage = useCallback(
+    (messageId: string) => {
+      const message = messages.find((m: any) => m.id === messageId);
+      if (message) {
+        navigator.clipboard.writeText(message.content).then(() => {
+          console.log('📋 Message copied to clipboard:', messageId);
+        }).catch((err) => {
+          console.error('Failed to copy message:', err);
+        });
+      }
+    },
+    [messages]
+  );
+
   // Toggle dark mode
   const toggleDarkMode = () => {
     setIsDark(!isDark);
@@ -221,46 +265,22 @@ export default function HomeClient() {
     <main className={`h-screen flex flex-col overflow-hidden ${isDark ? 'dark' : ''}`}>
       {/* Header */}
       <header 
-        className="fixed top-0 left-0 z-50 flex items-center justify-between px-6 py-4 border-b bg-white dark:bg-gray-900 dark:border-gray-700 transition-all duration-300"
+        className="fixed top-0 left-0 z-50 h-[70px] flex items-center justify-between px-6 py-3 border-b bg-white dark:bg-gray-900 dark:border-gray-700 transition-[right] duration-300 ease-in-out"
         style={{ right: isPanelOpen ? `${panelWidth}px` : '0' }}
       >
         <div className="flex items-center gap-3">
-
-            <img
-              src="https://lsbhexqvhkemgkqfbwdj.supabase.co/storage/v1/object/public/logos/light_logo.png"
+            {/* <img
+              src="https://kmwscxlhhndytxluptqp.supabase.co/storage/v1/object/public/assets/Flux.png"
               alt="Nova Agent Debugger"
-              className="h-8 w-auto"
-            />
-          <div>
+              className="w-6"
+            /> */}
+          {/* <div>
             <h1 className="text-lg font-bold text-gray-900 dark:text-white">
               {agentName}
             </h1>
-            {serviceUrl && (
-              <p className="text-xs text-gray-500 dark:text-gray-400">
-                {serviceUrl}
-              </p>
-            )}
-          </div>
+          </div> */}
         </div>
         <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2">
-            <span
-              className={`h-2 w-2 rounded-full ${
-                status === 'connected'
-                  ? 'bg-green-500'
-                  : status === 'error'
-                  ? 'bg-red-500'
-                  : 'bg-gray-400'
-              }`}
-            />
-            <span className="text-sm text-gray-500 dark:text-gray-400">
-              {status === 'connected'
-                ? 'Connected'
-                : status === 'error'
-                ? 'Error'
-                : 'Not Connected'}
-            </span>
-          </div>
           <button
             onClick={toggleDarkMode}
             className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
@@ -294,7 +314,7 @@ export default function HomeClient() {
       <div className="flex-1 flex min-h-0">
         {/* Chat Container */}
         <div
-          className="flex-1 flex flex-col min-h-0 transition-all duration-300"
+          className="flex-1 flex flex-col min-h-0 transition-[margin-right] duration-300 ease-in-out"
           style={{ marginRight: isPanelOpen ? `${panelWidth}px` : '0' }}
         >
           {status === 'connected' ? (
@@ -307,7 +327,12 @@ export default function HomeClient() {
               userAvatar={userAvatar}
               agentName={agentName}
               agentLogoUrl={agentInfo?.logo_url || agentInfo?.avatar_url}
+              apiUrl={serviceUrl}
               onSendMessage={handleSendMessage}
+              onRetryMessage={handleRetryMessage}
+              onLikeMessage={handleLikeMessage}
+              onDislikeMessage={handleDislikeMessage}
+              onShareMessage={handleShareMessage}
               messageContainerClassName="max-w-3xl mx-auto"
               inputPlaceholder="Send a message to test the agent..."
               examplePrompts={SUGGESTED_PROMPTS}
@@ -315,11 +340,15 @@ export default function HomeClient() {
           ) : (
             <div className="h-full flex items-center justify-center">
               <div className="text-center max-w-md px-6">
-                <div className="h-16 w-16 rounded-2xl bg-gray-100 dark:bg-gray-700/30 flex items-center justify-center mx-auto mb-4">
-                  <Bug className="h-8 w-8 text-indigo-600 dark:text-indigo-400" />
+                <div className="h-16 w-16 rounded-2xl bg-gray-50 dark:bg-gray-700/30 flex items-center justify-center mx-auto mb-4">
+                  <img 
+                    src="https://kmwscxlhhndytxluptqp.supabase.co/storage/v1/object/public/assets/Flux.png"
+                    alt="Flux"
+                    className="h-14 w-14 object-contain"
+                  />
                 </div>
                 <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-                  Nova Agent Debugger
+                  Agent Debugger
                 </h2>
                 <p className="text-gray-600 dark:text-gray-400 mb-4">
                   Configure your agent connection in the panel on the right to
@@ -328,7 +357,7 @@ export default function HomeClient() {
                 {!isPanelOpen && (
                   <button
                     onClick={togglePanel}
-                    className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors"
+                    className="px-4 py-2 text-sm font-medium text-white bg-gray-600 rounded-lg hover:bg-gray-700 transition-colors"
                   >
                     Open Configuration Panel
                   </button>
@@ -355,6 +384,8 @@ export default function HomeClient() {
           onResetChat={handleResetChat}
           panelWidth={panelWidth}
           onPanelWidthChange={handlePanelWidthChange}
+          isDark={isDark}
+          onToggleDarkMode={toggleDarkMode}
         />
       </div>
       </div>
