@@ -2,9 +2,11 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { ChatContainer, useChatStream, type ChatMessage } from '@newhomestar/chat-ui';
-import { Sun, Moon } from 'lucide-react';
+import { Sun, Moon, Menu } from 'lucide-react';
 import { ConfigPanel } from '@/components/config-panel';
+import { ChatSidebar } from '@/components/chat-sidebar';
 import type { AgentConfig, AgentStatus } from '@/types/agent';
+import { getChatMessagesUrl } from '@/utils/chat-api';
 
 // Storage keys
 const STORAGE = {
@@ -12,6 +14,7 @@ const STORAGE = {
   AUTH_TOKEN: 'nova-debugger-auth-token',
   PANEL_OPEN: 'nova-debugger-panel-open',
   PANEL_WIDTH: 'nova-debugger-panel-width',
+  PERSIST: 'nova-debugger-persist',
 } as const;
 
 const DEFAULT_PANEL_WIDTH = 320;
@@ -65,6 +68,7 @@ export default function HomeClient() {
   const [panelWidth, setPanelWidth] = useState(DEFAULT_PANEL_WIDTH);
   const [serviceUrl, setServiceUrl] = useState('');
   const [authToken, setAuthToken] = useState('');
+  const [persist, setPersist] = useState(false);
   const [agentInfo, setAgentInfo] = useState<AgentConfig | null>(null);
   const [status, setStatus] = useState<AgentStatus>('disconnected');
   const [discoveryError, setDiscoveryError] = useState<string | null>(null);
@@ -72,6 +76,13 @@ export default function HomeClient() {
   const [chatId, setChatId] = useState(() => 
     `debug-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
   );
+  
+  // Chat sidebar state
+  const [isChatSidebarOpen, setIsChatSidebarOpen] = useState(false);
+  
+  // Initial messages state for loading existing chats
+  const [initialMessages, setInitialMessages] = useState<ChatMessage[]>([]);
+  const [isLoadingMessages, setIsLoadingMessages] = useState(false);
 
   // Load saved config on mount
   useEffect(() => {
@@ -84,11 +95,13 @@ export default function HomeClient() {
     const savedToken = getStorageItem(STORAGE.AUTH_TOKEN, '');
     const savedPanelOpen = getStorageItem(STORAGE.PANEL_OPEN, 'true');
     const savedPanelWidth = getStorageItem(STORAGE.PANEL_WIDTH, '');
+    const savedPersist = getStorageItem(STORAGE.PERSIST, 'false');
 
     // Use localStorage values if they exist, otherwise use environment variables
     setServiceUrl(savedUrl || envApiUrl);
     setAuthToken(savedToken || envAuthToken);
     setIsPanelOpen(savedPanelOpen !== 'false');
+    setPersist(savedPersist === 'true');
     if (savedPanelWidth) {
       const width = parseInt(savedPanelWidth, 10);
       if (width >= 280 && width <= 600) {
@@ -110,6 +123,117 @@ export default function HomeClient() {
     setStorageItem(STORAGE.PANEL_OPEN, isPanelOpen.toString());
   }, [isPanelOpen]);
 
+  useEffect(() => {
+    setStorageItem(STORAGE.PERSIST, persist.toString());
+  }, [persist]);
+
+  // Handle persist change
+  const handlePersistChange = useCallback((newPersist: boolean) => {
+    setPersist(newPersist);
+    // Reset chat when toggling persist to ensure clean state
+    setChatId(`debug-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`);
+    setInitialMessages([]);
+  }, []);
+
+  // Fetch existing messages when selecting a chat from sidebar
+  useEffect(() => {
+    const fetchChatMessages = async () => {
+      // Skip fetching for new chats (those starting with 'debug-')
+      if (!chatId || chatId.startsWith('debug-') || !serviceUrl || !persist) {
+        setInitialMessages([]);
+        return;
+      }
+
+      console.log('[HomeClient] Fetching messages for chat:', chatId);
+      setIsLoadingMessages(true);
+      setChatError(null);
+
+      try {
+        const headers: Record<string, string> = {
+          'Content-Type': 'application/json',
+        };
+        if (authToken) {
+          headers['Authorization'] = `Bearer ${authToken}`;
+        }
+
+        const url = getChatMessagesUrl(serviceUrl, chatId);
+        console.log('[HomeClient] Fetching from:', url);
+        
+        const response = await fetch(url, {
+          method: 'GET',
+          headers,
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          console.log('[HomeClient] Messages response:', data);
+          
+          // Handle different response formats
+          let rawMessages: any[] = [];
+          if (data.success && data.messages) {
+            rawMessages = data.messages;
+          } else if (Array.isArray(data)) {
+            rawMessages = data;
+          } else if (data.data && Array.isArray(data.data)) {
+            rawMessages = data.data;
+          }
+          
+          // Transform messages to include rich content from annotation field
+          // This matches how project-starfleet-web handles it
+          const transformedMessages = rawMessages.map((msg: any) => {
+            // De-duplicate toolSteps by toolCallId to prevent duplicate chart/table rendering
+            // The database sometimes contains duplicate entries with the same toolCallId
+            const rawToolSteps = msg.annotation?.toolSteps || [];
+            const uniqueToolSteps = rawToolSteps.filter(
+              (step: any, index: number, arr: any[]) => 
+                arr.findIndex((s: any) => s.toolCallId === step.toolCallId) === index
+            );
+            
+            return {
+              id: msg.id,
+              role: msg.role,
+              content: msg.content,
+              createdAt: msg.createdAt || msg.created_at || new Date().toISOString(),
+              // Add timestamp for compatibility with ChatMessage type
+              timestamp: new Date(msg.createdAt || msg.created_at || new Date()),
+              // Restore feedback state from API
+              liked: msg.liked || false,
+              disliked: msg.disliked || false,
+              hasComment: msg.hasComment || false,
+              // Restore tool steps from annotation (chain of thought) - de-duplicated
+              toolSteps: uniqueToolSteps.length > 0 ? uniqueToolSteps : undefined,
+              // Restore knowledge sources from annotation
+              knowledgeSources: msg.annotation?.knowledge_sources || undefined,
+              // Create toolData from annotation for tool visualization (charts, tables, etc.)
+              // Note: Don't include separate 'annotation' field to avoid duplicate rendering
+              toolData: msg.annotation ? {
+                type: msg.annotation.type || 'unknown',
+                state: 'output-available',
+                output: msg.annotation
+              } : undefined
+            };
+          }) as ChatMessage[];
+          
+          console.log('[HomeClient] Transformed messages:', transformedMessages);
+          setInitialMessages(transformedMessages);
+        } else {
+          const errorText = await response.text();
+          console.error('[HomeClient] Error fetching messages:', response.status, errorText);
+          setChatError(`Failed to load chat messages: ${response.status}`);
+          setInitialMessages([]);
+        }
+      } catch (error) {
+        console.error('[HomeClient] Error fetching chat messages:', error);
+        setChatError(`Failed to load messages: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        setInitialMessages([]);
+      } finally {
+        setIsLoadingMessages(false);
+      }
+    };
+
+    fetchChatMessages();
+  }, [chatId, serviceUrl, authToken, persist]);
+
   // Save panel width when it changes
   const handlePanelWidthChange = useCallback((width: number) => {
     setPanelWidth(width);
@@ -118,7 +242,7 @@ export default function HomeClient() {
 
   // Configure the chat stream hook with dynamic config
   const {
-    messages,
+    messages: streamMessages,
     isLoading,
     isStreaming,
     sendMessage,
@@ -130,13 +254,24 @@ export default function HomeClient() {
     chatId: chatId,
     authToken: authToken || 'demo-token',
     settings: {
-      persist: false, // Disable database persistence for demo/testing
+      persist: persist, // Use persist setting from config
     },
     onError: (errorMessage) => {
       setChatError(errorMessage);
       setStatus('error');
     },
   });
+
+  // Combine initial messages with stream messages
+  // When loading an existing chat, use initialMessages; new messages from stream are appended
+  const messages = streamMessages.length > 0 ? streamMessages : initialMessages;
+
+  // Handle chat selection from sidebar
+  const handleChatSelect = useCallback((selectedChatId: string) => {
+    console.log('[HomeClient] Chat selected:', selectedChatId);
+    // Set the chat ID to trigger the ChatContainer re-render with the new chat
+    setChatId(selectedChatId);
+  }, []);
 
   // Handle agent discovery
   const handleDiscover = useCallback(async () => {
@@ -178,9 +313,11 @@ export default function HomeClient() {
 
   // Handle sending a message
   const handleSendMessage = useCallback(
-    (content: string) => {
+    (content: string | ChatMessage) => {
       setChatError(null);
-      sendMessage(content);
+      // Extract string content if ChatMessage is passed
+      const messageContent = typeof content === 'string' ? content : content.content;
+      sendMessage(messageContent);
     },
     [sendMessage]
   );
@@ -263,35 +400,40 @@ export default function HomeClient() {
 
   return (
     <main className={`h-screen flex flex-col overflow-hidden ${isDark ? 'dark' : ''}`}>
+      {/* Chat History Toggle Button - Always visible when persist enabled */}
+      {persist && status === 'connected' && (
+        <div
+          className="fixed top-4 z-50 flex items-center gap-2 transition-[left] duration-300 ease-in-out"
+          style={{
+            left: isChatSidebarOpen ? 'calc(18rem + 16px)' : '16px',
+          }}
+        >
+          <button
+            onClick={() => setIsChatSidebarOpen(!isChatSidebarOpen)}
+            className="p-2 rounded-lg border bg-white dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            aria-label={isChatSidebarOpen ? 'Close chat history' : 'Open chat history'}
+          >
+            <Menu className="h-5 w-5 text-gray-600 dark:text-gray-300" />
+          </button>
+        </div>
+      )}
+
       {/* Header */}
       <header 
-        className="fixed top-0 left-0 z-50 h-[70px] flex items-center justify-between px-6 py-3 border-b bg-white dark:bg-gray-900 dark:border-gray-700 transition-[right] duration-300 ease-in-out"
-        style={{ right: isPanelOpen ? `${panelWidth}px` : '0' }}
+        className="fixed top-0 z-40 h-[70px] flex items-center justify-between px-6 py-3 border-b bg-white dark:bg-gray-900 dark:border-gray-700 transition-[left,right] duration-300 ease-in-out"
+        style={{ 
+          left: isChatSidebarOpen && persist && status === 'connected' ? '18rem' : '0',
+          right: isPanelOpen ? `${panelWidth}px` : '0' 
+        }}
       >
         <div className="flex items-center gap-3">
-            {/* <img
-              src="https://kmwscxlhhndytxluptqp.supabase.co/storage/v1/object/public/assets/Flux.png"
-              alt="Nova Agent Debugger"
-              className="w-6"
-            /> */}
-          {/* <div>
-            <h1 className="text-lg font-bold text-gray-900 dark:text-white">
-              {agentName}
-            </h1>
-          </div> */}
+          {/* Spacer for chat history button */}
+          {persist && status === 'connected' && (
+            <div className="w-10" />
+          )}
         </div>
         <div className="flex items-center gap-4">
-          <button
-            onClick={toggleDarkMode}
-            className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-            aria-label="Toggle dark mode"
-          >
-            {isDark ? (
-              <Sun className="h-5 w-5 text-gray-300" />
-            ) : (
-              <Moon className="h-5 w-5 text-gray-600" />
-            )}
-          </button>
+          {/* Dark mode toggle moved to config panel */}
         </div>
       </header>
 
@@ -314,8 +456,11 @@ export default function HomeClient() {
       <div className="flex-1 flex min-h-0">
         {/* Chat Container */}
         <div
-          className="flex-1 flex flex-col min-h-0 transition-[margin-right] duration-300 ease-in-out"
-          style={{ marginRight: isPanelOpen ? `${panelWidth}px` : '0' }}
+          className="flex-1 flex flex-col min-h-0 transition-[margin-left,margin-right] duration-300 ease-in-out"
+          style={{ 
+            marginLeft: isChatSidebarOpen && persist && status === 'connected' ? '18rem' : '0',
+            marginRight: isPanelOpen ? `${panelWidth}px` : '0' 
+          }}
         >
           {status === 'connected' ? (
             <ChatContainer
@@ -373,12 +518,14 @@ export default function HomeClient() {
           onToggle={togglePanel}
           serviceUrl={serviceUrl}
           authToken={authToken}
+          persist={persist}
           agentInfo={agentInfo}
           status={status}
           error={discoveryError}
           isDiscovering={isDiscovering}
           onServiceUrlChange={setServiceUrl}
           onAuthTokenChange={setAuthToken}
+          onPersistChange={handlePersistChange}
           onDiscover={handleDiscover}
           onClearConfig={handleClearConfig}
           onResetChat={handleResetChat}
@@ -389,6 +536,19 @@ export default function HomeClient() {
         />
       </div>
       </div>
+
+      {/* Chat Sidebar - only rendered when persist is enabled */}
+      {persist && (
+        <ChatSidebar
+          isOpen={isChatSidebarOpen}
+          onClose={() => setIsChatSidebarOpen(false)}
+          serviceUrl={serviceUrl}
+          authToken={authToken}
+          currentChatId={chatId}
+          onChatSelect={handleChatSelect}
+          onNewChat={handleResetChat}
+        />
+      )}
     </main>
   );
 }

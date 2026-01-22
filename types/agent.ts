@@ -59,4 +59,39 @@ export const STORAGE_KEYS = {
   SERVICE_URL: 'nova-debugger-service-url',
   AUTH_TOKEN: 'nova-debugger-auth-token',
   PANEL_OPEN: 'nova-debugger-panel-open',
+  PERSIST: 'nova-debugger-persist',
+  CHAT_SIDEBAR_OPEN: 'nova-debugger-chat-sidebar-open',
 } as const;
+
+// Chat types for persistence
+export interface Chat {
+  id: string;
+  title: string | null;
+  created_at: string;
+  updated_at: string;
+  user_id?: string;
+  settings?: any;
+}
+
+export interface ChatMessage {
+  id: string;
+  role: 'user' | 'assistant' | 'system' | 'tool';
+  content: string;
+  createdAt: string;
+  annotation?: any;
+  liked?: boolean;
+  disliked?: boolean;
+  hasComment?: boolean;
+}
+
+export interface ChatListResponse {
+  success: boolean;
+  chats: Chat[];
+  error?: string;
+}
+
+export interface ChatMessagesResponse {
+  success: boolean;
+  messages: ChatMessage[];
+  error?: string;
+}

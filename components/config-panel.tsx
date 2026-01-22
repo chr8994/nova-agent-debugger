@@ -36,12 +36,14 @@ interface ConfigPanelProps {
   onToggle: () => void;
   serviceUrl: string;
   authToken: string;
+  persist: boolean;
   agentInfo: AgentConfig | null;
   status: AgentStatus;
   error: string | null;
   isDiscovering: boolean;
   onServiceUrlChange: (url: string) => void;
   onAuthTokenChange: (token: string) => void;
+  onPersistChange: (persist: boolean) => void;
   onDiscover: () => void;
   onClearConfig: () => void;
   onResetChat: () => void;
@@ -56,12 +58,14 @@ export function ConfigPanel({
   onToggle,
   serviceUrl,
   authToken,
+  persist,
   agentInfo,
   status,
   error,
   isDiscovering,
   onServiceUrlChange,
   onAuthTokenChange,
+  onPersistChange,
   onDiscover,
   onClearConfig,
   onResetChat,
@@ -256,6 +260,36 @@ export function ConfigPanel({
                 </div>
               </div>
 
+              {/* Persist Toggle */}
+              <div className="flex items-center justify-between py-2">
+                <div className="flex flex-col">
+                  <label
+                    htmlFor="persist-toggle"
+                    className="text-sm font-medium text-gray-700 dark:text-gray-300"
+                  >
+                    Persist Chats
+                  </label>
+                  <span className="text-xs text-gray-500 dark:text-gray-400">
+                    Save chat history to database
+                  </span>
+                </div>
+                <button
+                  id="persist-toggle"
+                  role="switch"
+                  aria-checked={persist}
+                  onClick={() => onPersistChange(!persist)}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 ${
+                    persist ? 'bg-indigo-600' : 'bg-gray-200 dark:bg-gray-700'
+                  }`}
+                >
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      persist ? 'translate-x-6' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
+              </div>
+
               {/* Discover Button */}
               <button
                 onClick={onDiscover}
@@ -311,7 +345,7 @@ export function ConfigPanel({
                 </div>
 
                 {/* Agent Card */}
-                <div className="p-4 bg-white dark:bg-gray-800 rounded-lg border dark:border-gray-700 space-y-3">
+                <div className="p-4 bg-white dark:bg-gray-800 rounded-xl border dark:border-gray-700 space-y-3">
                   <div className="flex items-center gap-3">
                     {agentInfo.avatar_url || agentInfo.logo_url ? (
                       <img
