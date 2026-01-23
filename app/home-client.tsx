@@ -19,25 +19,6 @@ const STORAGE = {
 
 const DEFAULT_PANEL_WIDTH = 320;
 
-// Suggested prompts for the agent debugger
-const SUGGESTED_PROMPTS = [
-  {
-    text: "Show available data sources",
-    fullPrompt: "Please provide a comprehensive list of all available data sources, including their names and discriptions",
-    lucideIcon: "database"
-  },
-  {
-    text: 'Show total sales for the year',
-    fullPrompt: 'Show me the total sales counts for the current year broken down by month using the wallet sales data. Provide the results in a markdown table format.',
-    lucideIcon: 'trending-up',
-  },
-  {
-    text: "Summarize 2025 IPA Results",
-    fullPrompt: "Using the IPA Submissions data source provide a table in markdown format with the total scores for each category for 2025 with the completed_for name included and manager name.",
-    lucideIcon: "line-chart"
-  }
-];
-
 // Default fallback for logo
 const DEFAULT_LOGO_SVG =
   'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32"><rect width="32" height="32" fill="%234F46E5" rx="4"/><text x="50%" y="50%" text-anchor="middle" dy=".35em" fill="white" font-size="12" font-family="Arial">AI</text></svg>';
@@ -480,7 +461,7 @@ export default function HomeClient() {
               onShareMessage={handleShareMessage}
               messageContainerClassName="max-w-3xl mx-auto"
               inputPlaceholder="Send a message to test the agent..."
-              examplePrompts={SUGGESTED_PROMPTS}
+              showPromptsWhen="empty"
             />
           ) : (
             <div className="h-full flex items-center justify-center">
