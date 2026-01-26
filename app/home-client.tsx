@@ -64,6 +64,13 @@ export default function HomeClient() {
   // Initial messages state for loading existing chats
   const [initialMessages, setInitialMessages] = useState<ChatMessage[]>([]);
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
+  
+  // Toast state
+  const [toast, setToast] = useState<{ show: boolean; message: string; type: 'success' | 'error' }>({
+    show: false,
+    message: '',
+    type: 'success'
+  });
 
   // Load saved config on mount
   useEffect(() => {
@@ -104,13 +111,13 @@ export default function HomeClient() {
     setStorageItem(STORAGE.PANEL_OPEN, isPanelOpen.toString());
   }, [isPanelOpen]);
 
-  useEffect(() => {
-    setStorageItem(STORAGE.PERSIST, persist.toString());
-  }, [persist]);
+  // Note: persist is saved in handlePersistChange to avoid race condition with load effect
 
   // Handle persist change
   const handlePersistChange = useCallback((newPersist: boolean) => {
     setPersist(newPersist);
+    // Save to localStorage immediately when user changes the value
+    setStorageItem(STORAGE.PERSIST, newPersist.toString());
     // Reset chat when toggling persist to ensure clean state
     setChatId(`debug-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`);
     setInitialMessages([]);
@@ -371,7 +378,22 @@ export default function HomeClient() {
   const handleResetChat = useCallback(() => {
     setChatError(null);
     setChatId(`debug-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`);
+    setInitialMessages([]);
   }, []);
+
+  // Handle chat deleted from sidebar
+  const handleChatDeleted = useCallback((deletedChatId: string, chatTitle: string) => {
+    // If the deleted chat was the current one, reset to a new chat
+    if (chatId === deletedChatId) {
+      setChatError(null);
+      setChatId(`debug-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`);
+      setInitialMessages([]);
+    }
+    // Show success toast
+    setToast({ show: true, message: `"${chatTitle}" deleted successfully`, type: 'success' });
+    // Auto-hide after 3 seconds
+    setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 3000);
+  }, [chatId]);
 
   // Get logo URL from config, with fallback
   const logoUrl =
@@ -446,6 +468,7 @@ export default function HomeClient() {
           {status === 'connected' ? (
             <ChatContainer
               key={chatId}
+              chatId={chatId}
               messages={messages as any}
               isLoading={isLoading}
               isStreaming={isStreaming}
@@ -528,7 +551,38 @@ export default function HomeClient() {
           currentChatId={chatId}
           onChatSelect={handleChatSelect}
           onNewChat={handleResetChat}
+          onChatDeleted={handleChatDeleted}
         />
+      )}
+
+      {/* Toast notification */}
+      {toast.show && (
+        <div 
+          className={`fixed bottom-6 left-1/2 transform -translate-x-1/2 z-[100] px-4 py-3 rounded-lg shadow-lg flex items-center gap-2 transition-all duration-300 ${
+            toast.type === 'success' 
+              ? 'bg-green-600 text-white' 
+              : 'bg-red-600 text-white'
+          }`}
+        >
+          {toast.type === 'success' ? (
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+          ) : (
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          )}
+          <span className="text-sm font-medium">{toast.message}</span>
+          <button 
+            onClick={() => setToast({ show: false, message: '', type: 'success' })}
+            className="ml-2 hover:opacity-80"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
       )}
     </main>
   );

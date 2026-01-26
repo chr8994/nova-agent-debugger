@@ -22,6 +22,7 @@ interface ChatSidebarProps {
   currentChatId: string | null;
   onChatSelect: (chatId: string) => void;
   onNewChat: () => void;
+  onChatDeleted?: (chatId: string, chatTitle: string) => void;
 }
 
 interface ChatItemProps {
@@ -162,6 +163,7 @@ export function ChatSidebar({
   currentChatId,
   onChatSelect,
   onNewChat,
+  onChatDeleted,
 }: ChatSidebarProps) {
   const [chats, setChats] = useState<Chat[]>([]);
   const [loading, setLoading] = useState(true);
@@ -330,6 +332,9 @@ export function ChatSidebar({
   const handleDeleteConfirm = async () => {
     if (!deleteConfirm) return;
 
+    const deletedChatId = deleteConfirm.id;
+    const deletedChatTitle = deleteConfirm.title || 'Untitled Chat';
+
     try {
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
@@ -338,14 +343,16 @@ export function ChatSidebar({
         headers['Authorization'] = `Bearer ${authToken}`;
       }
 
-      const response = await fetch(getChatDeleteUrl(serviceUrl, deleteConfirm.id), {
+      const response = await fetch(getChatDeleteUrl(serviceUrl, deletedChatId), {
         method: 'DELETE',
         headers,
       });
 
       if (response.ok) {
-        setChats(chats.filter((chat) => chat.id !== deleteConfirm.id));
+        setChats(chats.filter((chat) => chat.id !== deletedChatId));
         setDeleteConfirm(null);
+        // Notify parent about successful deletion
+        onChatDeleted?.(deletedChatId, deletedChatTitle);
       }
     } catch (error) {
       console.error('Error deleting chat:', error);
@@ -395,7 +402,7 @@ export function ChatSidebar({
       >
         <div className="h-full flex flex-col">
           {/* Header */}
-          <div className="flex items-center justify-between px-4 py-4 border-b dark:border-gray-700">
+          <div className="flex h-[70px] items-center justify-between px-4 py-4 border-b dark:border-gray-700">
             <div className="flex items-center gap-2">
               <MessageSquare className="w-5 h-5 text-gray-700 dark:text-gray-300" />
               <span className="text-sm font-semibold text-gray-900 dark:text-white">
@@ -457,8 +464,8 @@ export function ChatSidebar({
               </div>
             ) : chats.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-48 text-center p-6">
-                <div className="w-12 h-12 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full flex items-center justify-center mb-4">
-                  <MessageSquare className="w-6 h-6 text-white" />
+                <div className="w-12 h-12 bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center mb-4">
+                  <MessageSquare className="w-6 h-6 text-gray-400 dark:text-gray-500" />
                 </div>
                 <div className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
                   No chat history yet

@@ -55,7 +55,7 @@ export const getChatUpdateUrl = (serviceUrl: string, chatId: string): string => 
  */
 export const getChatDeleteUrl = (serviceUrl: string, chatId: string): string => {
   const baseUrl = serviceUrl.replace(/\/$/, "");
-  return `${baseUrl}/api/chat/${chatId}/delete`;
+  return `${baseUrl}/api/chats/${chatId}`;
 };
 
 /**

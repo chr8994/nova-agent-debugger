@@ -345,7 +345,7 @@ export function ConfigPanel({
                 </div>
 
                 {/* Agent Card */}
-                <div className="p-4 bg-white dark:bg-gray-800 rounded-xl border dark:border-gray-700 space-y-3">
+                <div className="p-4 bg-white dark:bg-gray-800 rounded-2xl border dark:border-gray-700 space-y-3">
                   <div className="flex items-center gap-3">
                     {agentInfo.avatar_url || agentInfo.logo_url ? (
                       <img
