@@ -303,9 +303,9 @@ export default function HomeClient() {
   const handleSendMessage = useCallback(
     (content: string | ChatMessage) => {
       setChatError(null);
-      // Extract string content if ChatMessage is passed
-      const messageContent = typeof content === 'string' ? content : content.content;
-      sendMessage(messageContent);
+      // Pass the full ChatMessage to preserve annotation (including forced_tools)
+      // useChatStream.sendMessage handles both string and ChatMessage types
+      sendMessage(content);
     },
     [sendMessage]
   );
