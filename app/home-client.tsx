@@ -484,6 +484,7 @@ export default function HomeClient() {
               onShareMessage={handleShareMessage}
               messageContainerClassName="max-w-3xl mx-auto"
               inputPlaceholder="Send a message to test the agent..."
+              promptsSubtitle="I'm Astro, your AI assistant for training and market insights."
               showPromptsWhen="empty"
             />
           ) : (
