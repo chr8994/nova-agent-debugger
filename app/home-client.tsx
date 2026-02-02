@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { ChatContainer, useChatStream, downloadChatExport, type ChatMessage } from '@newhomestar/chat-ui';
-import { Sun, Moon, Menu } from 'lucide-react';
+import { Sun, Moon, Menu, Plus } from 'lucide-react';
 import { ConfigPanel } from '@/components/config-panel';
 import { ChatSidebar } from '@/components/chat-sidebar';
 import type { AgentConfig, AgentStatus } from '@/types/agent';
@@ -408,7 +408,7 @@ export default function HomeClient() {
 
   return (
     <main className={`h-screen flex flex-col overflow-hidden ${isDark ? 'dark' : ''}`}>
-      {/* Chat History Toggle Button - Always visible when persist enabled */}
+      {/* Chat History Toggle Button and New Chat Button - Always visible when persist enabled */}
       {persist && status === 'connected' && (
         <div
           className="fixed top-4 z-50 flex items-center gap-2 transition-[left] duration-300 ease-in-out"
@@ -422,6 +422,14 @@ export default function HomeClient() {
             aria-label={isChatSidebarOpen ? 'Close chat history' : 'Open chat history'}
           >
             <Menu className="h-5 w-5 text-gray-600 dark:text-gray-300" />
+          </button>
+          <button
+            onClick={handleResetChat}
+            className="p-2 rounded-lg border bg-white dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            aria-label="New chat"
+            title="New chat"
+          >
+            <Plus className="h-5 w-5 text-gray-600 dark:text-gray-300" />
           </button>
         </div>
       )}
