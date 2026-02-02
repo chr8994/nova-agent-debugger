@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
-import { ChatContainer, useChatStream, type ChatMessage } from '@newhomestar/chat-ui';
+import { ChatContainer, useChatStream, downloadChatExport, type ChatMessage } from '@newhomestar/chat-ui';
 import { Sun, Moon, Menu } from 'lucide-react';
 import { ConfigPanel } from '@/components/config-panel';
 import { ChatSidebar } from '@/components/chat-sidebar';
@@ -381,6 +381,11 @@ export default function HomeClient() {
     setInitialMessages([]);
   }, []);
 
+  // Handle export chat
+  const handleExportChat = useCallback(() => {
+    downloadChatExport(messages, chatId, 'json');
+  }, [messages, chatId]);
+
   // Handle chat deleted from sidebar
   const handleChatDeleted = useCallback((deletedChatId: string, chatTitle: string) => {
     // If the deleted chat was the current one, reset to a new chat
@@ -538,6 +543,8 @@ export default function HomeClient() {
           onPanelWidthChange={handlePanelWidthChange}
           isDark={isDark}
           onToggleDarkMode={toggleDarkMode}
+          hasMessages={messages.length > 0}
+          onExportChat={handleExportChat}
         />
       </div>
       </div>

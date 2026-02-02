@@ -17,6 +17,7 @@ import {
   GripVertical,
   Sun,
   Moon,
+  Download,
 } from 'lucide-react';
 import type { AgentConfig, AgentStatus, STORAGE_KEYS } from '@/types/agent';
 
@@ -51,6 +52,8 @@ interface ConfigPanelProps {
   onPanelWidthChange: (width: number) => void;
   isDark: boolean;
   onToggleDarkMode: () => void;
+  hasMessages: boolean;
+  onExportChat: () => void;
 }
 
 export function ConfigPanel({
@@ -73,6 +76,8 @@ export function ConfigPanel({
   onPanelWidthChange,
   isDark,
   onToggleDarkMode,
+  hasMessages,
+  onExportChat,
 }: ConfigPanelProps) {
   const [isResizing, setIsResizing] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -146,6 +151,18 @@ export function ConfigPanel({
           right: isOpen ? `${panelWidth + 20}px` : '16px',
         }}
       >
+        {/* Export Chat Button - Only visible when there are messages */}
+        {hasMessages && (
+          <button
+            onClick={onExportChat}
+            className="p-2 rounded-lg border bg-white dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            aria-label="Export chat"
+            title="Export chat as JSON"
+          >
+            <Download className="h-5 w-5 text-gray-600 dark:text-gray-300" />
+          </button>
+        )}
+
         {/* Dark Mode Toggle */}
         <button
           onClick={onToggleDarkMode}
